@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Cantinho de Vendas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf7f7;
+        }
+        .font-serif-italic {
+            font-family: 'Dancing Script', cursive;
+            font-style: italic;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #fbcfe8;
+            border-radius: 10px;
+        }
+        .modal-enter {
+            animation: zoomIn 0.3s ease-out;
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="selection:bg-rose-100 text-slate-700">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        
+        <!-- Cabeçalho -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div class="flex items-center gap-4">
+                <div class="bg-rose-100 p-3 rounded-full text-rose-400">
+                    <i data-lucide="heart" class="fill-rose-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-serif-italic text-rose-800 tracking-tight">Meu Cantinho de Vendas</h1>
+                    <p class="text-rose-400 text-sm font-medium tracking-wide uppercase">Controle de Afeto e Lucros</p>
+                </div>
+            </div>
+            <button onclick="openModal()" class="flex items-center justify-center gap-2 bg-rose-400 hover:bg-rose-500 text-white px-8 py-3 rounded-full transition-all shadow-md shadow-rose-200 font-medium">
+                <i data-lucide="plus"></i>
+                Nova Venda
+            </button>
+        </header>
+
+        <!-- Dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12" id="stats-container">
+            <!-- Stats injetadas via JS -->
+        </div>
+
+        <!-- Filtros -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+            <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-rose-200 w-5 h-5"></i>
+                <input type="text" id="searchInput" oninput="renderSales()" placeholder="Buscar cliente ou item com carinho..." class="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-rose-200 outline-none transition-all placeholder:text-rose-200">
+            </div>
+            <select id="filterStatus" onchange="renderSales()" class="bg-white px-6 py-3 rounded-2xl shadow-sm focus:ring-2 focus:ring-rose-200 outline-none text-slate-500 border-none appearance-none cursor-pointer">
+                <option value="all">Ver tudo</option>
+                <option value="pending_payment">Aguardando pagamento</option>
+                <option value="pending_delivery">Aguardando envio</option>
+            </select>
+        </div>
+
+        <!-- Lista de Vendas -->
+        <div id="salesList" class="space-y-6">
+            <!-- Vendas injetadas via JS -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 bg-rose-900/10 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2rem] w-full max-w-2xl shadow-xl border border-rose-50 max-h-[90vh] flex flex-col overflow-hidden modal-enter">
+            <div class="p-8 border-b border-rose-50 flex justify-between items-center bg-rose-50/30">
+                <h2 id="modalTitle" class="text-xl font-serif-italic text-rose-800 text-2xl">Nova Venda Especial</h2>
+                <button onclick="closeModal()" class="text-rose-300 hover:text-rose-500 transition-colors">
+                    <i data-lucide="x-circle"></i>
+                </button>
+            </div>
+            
+            <form id="saleForm" class="p-8 overflow-y-auto custom-scrollbar space-y-6">
+                <input type="hidden" id="saleId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2">Nome da Cliente</label>
+                    <input type="text" id="customerName" required placeholder="Quem é a sortuda?" class="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-200 outline-none transition-all">
+                </div>
+
+                <!-- Itens -->
+                <div>
+                    <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-3">Itens da Venda</label>
+                    <div id="itemsContainer" class="space-y-3">
+                        <!-- Campos de itens via JS -->
+                    </div>
+                    <button type="button" onclick="addItemRow()" class="flex items-center gap-2 text-rose-400 text-sm font-medium hover:text-rose-500 mt-3 px-1">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        Adicionar outro item
+                    </button>
+                </div>
+
+                <div class="pt-4 border-t border-rose-50 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2">Preço de Custo (Total)</label>
+                        <input type="number" id="costPrice" step="0.01" required class="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2">Valor da Venda (Total)</label>
+                        <input type="number" id="salePrice" step="0.01" required class="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-200 outline-none">
+                    </div>
+                </div>
+
+                <div class="p-6 bg-rose-50/40 rounded-[1.5rem] grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-rose-400 uppercase tracking-widest mb-2">Responsável pelo Frete</label>
+                        <select id="shippingPaidBy" class="w-full px-4 py-3 bg-white border-none rounded-xl text-sm outline-none">
+                            <option value="customer">Cliente Pagou</option>
+                            <option value="seller">Eu Paguei (Descontar)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-rose-400 uppercase tracking-widest mb-2">Valor do Frete</label>
+                        <input type="number" id="shippingCost" step="0.01" value="0" class="w-full px-4 py-3 bg-white border-none rounded-xl outline-none text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2 text-rose-500 italic">Repasse para o Felipe</label>
+                        <input type="number" id="felipeAmount" step="0.01" value="0" placeholder="Quanto vai pro Felipe?" class="w-full px-5 py-3 bg-rose-50/30 border border-rose-100 rounded-2xl focus:ring-2 focus:ring-rose-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2">Gastos Extras / Taxas</label>
+                        <input type="number" id="extraFees" step="0.01" value="0" placeholder="Juros maquininha..." class="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-200 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-rose-300 uppercase tracking-widest mb-2">Método de Pagamento</label>
+                    <select id="paymentMethod" class="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl outline-none">
+                        <option value="Pix">Pix</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-around bg-rose-50/20 py-4 rounded-2xl border border-rose-50">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="isPaid" class="w-5 h-5 accent-rose-400">
+                        <span class="text-sm font-medium text-rose-800 italic">Já foi pago?</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="isDelivered" class="w-5 h-5 accent-rose-400">
+                        <span class="text-sm font-medium text-rose-800 italic">Já foi entregue?</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full bg-rose-400 hover:bg-rose-500 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-rose-100">
+                    Salvar com Carinho
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- Estado e Dados ---
+        let sales = JSON.parse(localStorage.getItem('vendas_delicadas_data')) || [];
+
+        // --- Funções Auxiliares ---
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        }
+
+        function calculateProfit(sale) {
+            const saleVal = parseFloat(sale.salePrice) || 0;
+            const costVal = parseFloat(sale.costPrice) || 0;
+            const extraVal = parseFloat(sale.extraFees) || 0;
+            const felipeVal = parseFloat(sale.felipeAmount) || 0;
+            const shipVal = sale.shippingPaidBy === 'seller' ? (parseFloat(sale.shippingCost) || 0) : 0;
+            
+            // O lucro final desconta o custo, frete (se pago pelo vendedor), taxas e o valor pro Felipe
+            return saleVal - costVal - extraVal - shipVal - felipeVal;
+        }
+
+        // --- Manipulação da UI ---
+        function openModal(saleId = null) {
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('saleForm');
+            const title = document.getElementById('modalTitle');
+            form.reset();
+            document.getElementById('itemsContainer').innerHTML = '';
+            
+            if (saleId) {
+                const sale = sales.find(s => s.id === saleId);
+                title.innerText = 'Editar Detalhes';
+                document.getElementById('saleId').value = sale.id;
+                document.getElementById('customerName').value = sale.customerName;
+                document.getElementById('costPrice').value = sale.costPrice;
+                document.getElementById('salePrice').value = sale.salePrice;
+                document.getElementById('shippingPaidBy').value = sale.shippingPaidBy;
+                document.getElementById('shippingCost').value = sale.shippingCost;
+                document.getElementById('extraFees').value = sale.extraFees || 0;
+                document.getElementById('felipeAmount').value = sale.felipeAmount || 0;
+                document.getElementById('paymentMethod').value = sale.paymentMethod;
+                document.getElementById('isPaid').checked = sale.isPaid;
+                document.getElementById('isDelivered').checked = sale.isDelivered;
+                
+                sale.items.forEach(item => addItemRow(item.name, item.quantity));
+            } else {
+                title.innerText = 'Nova Venda Especial';
+                document.getElementById('saleId').value = '';
+                addItemRow();
+            }
+            
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function addItemRow(name = '', qty = 1) {
+            const container = document.getElementById('itemsContainer');
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center item-row';
+            div.innerHTML = `
+                <input type="text" required placeholder="Nome do item..." value="${name}" class="item-name flex-1 px-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-rose-200 outline-none text-sm">
+                <div class="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-xl">
+                    <button type="button" onclick="this.nextElementSibling.innerText = Math.max(1, parseInt(this.nextElementSibling.innerText) - 1)" class="text-rose-300"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
+                    <span class="item-qty text-sm font-bold w-4 text-center">${qty}</span>
+                    <button type="button" onclick="this.previousElementSibling.innerText = parseInt(this.previousElementSibling.innerText) + 1" class="text-rose-300"><i data-lucide="plus-circle" class="w-4 h-4"></i></button>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="p-2 text-rose-200 hover:text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+        }
+
+        // --- Lógica de Negócio ---
+        document.getElementById('saleForm').onsubmit = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('saleId').value || Date.now().toString();
+            
+            const itemRows = document.querySelectorAll('.item-row');
+            const items = Array.from(itemRows).map(row => ({
+                id: Math.random(),
+                name: row.querySelector('.item-name').value,
+                quantity: parseInt(row.querySelector('.item-qty').innerText)
+            }));
+
+            const saleData = {
+                id,
+                customerName: document.getElementById('customerName').value,
+                items,
+                costPrice: document.getElementById('costPrice').value,
+                salePrice: document.getElementById('salePrice').value,
+                shippingPaidBy: document.getElementById('shippingPaidBy').value,
+                shippingCost: document.getElementById('shippingCost').value,
+                extraFees: document.getElementById('extraFees').value,
+                felipeAmount: document.getElementById('felipeAmount').value,
+                paymentMethod: document.getElementById('paymentMethod').value,
+                isPaid: document.getElementById('isPaid').checked,
+                isDelivered: document.getElementById('isDelivered').checked,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            const index = sales.findIndex(s => s.id === id);
+            if (index > -1) sales[index] = saleData;
+            else sales.push(saleData);
+
+            saveAndRender();
+            closeModal();
+        };
+
+        function deleteSale(id) {
+            if(confirm('Deseja excluir esta venda com carinho?')) {
+                sales = sales.filter(s => s.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function toggleDelivered(id) {
+            const sale = sales.find(s => s.id === id);
+            sale.isDelivered = !sale.isDelivered;
+            saveAndRender();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('vendas_delicadas_data', JSON.stringify(sales));
+            renderStats();
+            renderSales();
+        }
+
+        function renderStats() {
+            const totalSales = sales.reduce((acc, curr) => acc + parseFloat(curr.salePrice || 0), 0);
+            const totalProfit = sales.reduce((acc, curr) => acc + calculateProfit(curr), 0);
+            const totalFelipe = sales.reduce((acc, curr) => acc + parseFloat(curr.felipeAmount || 0), 0);
+
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="p-6 rounded-[2rem] bg-white shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                    <div class="p-3 rounded-2xl bg-slate-50 text-rose-400"><i data-lucide="dollar-sign" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Vendas Totais</p>
+                        <p class="text-xl font-serif-italic text-slate-700">${formatCurrency(totalSales)}</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-[2rem] bg-white ring-2 ring-rose-50 shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                    <div class="p-3 rounded-2xl bg-slate-50 text-emerald-400"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Meu Lucro Limpo</p>
+                        <p class="text-xl font-serif-italic text-rose-800">${formatCurrency(totalProfit)}</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-[2rem] bg-white shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                    <div class="p-3 rounded-2xl bg-slate-50 text-indigo-400"><i data-lucide="user" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Total Felipe</p>
+                        <p class="text-xl font-serif-italic text-indigo-800">${formatCurrency(totalFelipe)}</p>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderSales() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('filterStatus').value;
+            const container = document.getElementById('salesList');
+            
+            const filtered = sales.filter(sale => {
+                const matchesSearch = sale.customerName.toLowerCase().includes(searchTerm) || 
+                                     sale.items.some(i => i.name.toLowerCase().includes(searchTerm));
+                if (filter === 'pending_payment') return matchesSearch && !sale.isPaid;
+                if (filter === 'pending_delivery') return matchesSearch && !sale.isDelivered;
+                return matchesSearch;
+            }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-24 bg-white/50 rounded-3xl border border-dashed border-rose-200">
+                        <i data-lucide="shopping-bag" class="mx-auto mb-4 text-rose-200 w-12 h-12"></i>
+                        <p class="text-rose-300 italic">Nenhuma venda registrada ainda...</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = filtered.map(sale => {
+                    const profit = calculateProfit(sale);
+                    return `
+                        <div class="bg-white rounded-[2rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden">
+                            <div class="p-6 flex flex-wrap items-center justify-between gap-6">
+                                <div class="flex-1 min-w-[240px]">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-xl font-serif-italic text-rose-900">${sale.customerName}</h3>
+                                        <span class="${sale.isPaid ? 'bg-emerald-50 text-emerald-500' : 'bg-amber-50 text-amber-500'} text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tight">
+                                            ${sale.isPaid ? 'Pago' : 'Pendente'}
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${sale.items.slice(0, 3).map(item => `
+                                            <span class="text-xs bg-slate-50 text-slate-400 px-3 py-1 rounded-full border border-slate-100">
+                                                ${item.quantity}x ${item.name}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-10">
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Venda</p>
+                                        <p class="font-serif-italic text-lg text-slate-700">${formatCurrency(sale.salePrice)}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">Felipe</p>
+                                        <p class="font-serif-italic text-lg text-indigo-600">${formatCurrency(sale.felipeAmount || 0)}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Meu Lucro</p>
+                                        <p class="font-serif-italic text-lg ${profit >= 0 ? 'text-emerald-500' : 'text-rose-400'}">${formatCurrency(profit)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="toggleDelivered('${sale.id}')" class="w-12 h-12 rounded-full flex items-center justify-center transition-all ${sale.isDelivered ? 'bg-rose-50 text-rose-400' : 'bg-slate-50 text-slate-200 hover:text-rose-300'}">
+                                        <i data-lucide="truck"></i>
+                                    </button>
+                                    <div class="flex items-center bg-slate-50 rounded-full px-2 py-1 gap-1">
+                                        <button onclick="openModal('${sale.id}')" class="p-2 text-slate-300 hover:text-rose-400 transition-colors"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteSale('${sale.id}')" class="p-2 text-slate-300 hover:text-rose-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <button onclick="this.closest('.bg-white').querySelector('.details').classList.toggle('hidden')" class="p-2 text-rose-300 hover:text-rose-500 transition-colors"><i data-lucide="chevron-down" class="w-5 h-5"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="details hidden px-8 pb-8 pt-4 bg-rose-50/20 border-t border-rose-50/50">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <div>
+                                        <h4 class="text-[10px] font-bold text-rose-300 uppercase tracking-widest mb-4">Lista Completa de Itens</h4>
+                                        <ul class="space-y-2">
+                                            ${sale.items.map(i => `<li class="flex justify-between text-sm italic text-rose-800 bg-white/40 px-4 py-2 rounded-xl"><span>${i.name}</span><span class="font-bold">x${i.quantity}</span></li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <h4 class="text-[10px] font-bold text-rose-300 uppercase tracking-widest mb-4">Resumo Financeiro</h4>
+                                        <div class="space-y-2 text-sm">
+                                            <div class="flex justify-between border-b border-rose-50/50 pb-2"><span class="text-slate-400 italic">Custo:</span><span class="text-slate-600">${formatCurrency(sale.costPrice)}</span></div>
+                                            <div class="flex justify-between border-b border-rose-50/50 pb-2"><span class="text-slate-400 italic">Frete (${sale.shippingPaidBy === 'customer' ? 'Cliente' : 'Vendedor'}):</span><span class="${sale.shippingPaidBy === 'seller' ? 'text-rose-400' : 'text-slate-400'}">${formatCurrency(sale.shippingCost)}</span></div>
+                                            <div class="flex justify-between border-b border-rose-50/50 pb-2"><span class="text-indigo-400 italic font-bold">Repasse Felipe:</span><span class="text-indigo-600 font-bold">${formatCurrency(sale.felipeAmount || 0)}</span></div>
+                                            <div class="flex justify-between border-b border-rose-50/50 pb-2"><span class="text-slate-400 italic">Taxas Extras:</span><span class="text-rose-400">${formatCurrency(sale.extraFees)}</span></div>
+                                            <div class="flex justify-between pt-2"><span class="text-rose-800 font-serif-italic text-lg underline underline-offset-4 decoration-rose-100">Meu Lucro Real:</span><span class="text-emerald-500 font-bold text-lg">${formatCurrency(profit)}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        // Inicialização
+        window.onload = function() {
+            renderStats();
+            renderSales();
+        };
+    </script>
+</body>
+</html>
